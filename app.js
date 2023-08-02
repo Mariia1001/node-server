@@ -8,21 +8,30 @@ const rl = readline.createInterface({
 const tasks = [];
 
 function addTask(indicador, descripcion) {
-  tasks.push({ indicador, descripcion, completada: false });
+  return new Promise((resolve, reject) => {
+    tasks.push({ indicador, descripcion, completada: false });
+    resolve();
+  });
 }
 
 function removeTask(indicador) {
-  const index = tasks.findIndex(task => task.indicador === indicador);
-  if (index !== -1) {
-    tasks.splice(index, 1);
-  }
+  return new Promise((resolve, reject) => {
+    const index = tasks.findIndex(task => task.indicador === indicador);
+    if (index !== -1) {
+      tasks.splice(index, 1);
+    }
+    resolve();
+  });
 }
 
 function completeTask(indicador) {
-  const task = tasks.find(task => task.indicador === indicador);
-  if (task) {
-    task.completada = true;
-  }
+  return new Promise((resolve, reject) => {
+    const task = tasks.find(task => task.indicador === indicador);
+    if (task) {
+      task.completada = true;
+    }
+    resolve();
+  });
 }
 
 function showTasks() {
@@ -32,43 +41,48 @@ function showTasks() {
   });
 }
 
-function promptAction() {
-  rl.question('\nElige una acción (agregar/eliminar/completada/mostrar/cerrar): ', action => {
-    switch (action) {
-      case 'agregar':
-        rl.question('Indicador de la tarea: ', indicador => {
-          rl.question('Descripción de la tarea: ', descripcion => {
-            addTask(indicador, descripcion);
-            promptAction();
-          });
-        });
-        break;
-      case 'eliminar':
-        rl.question('Indicador de la tarea a eliminar: ', indicador => {
-          removeTask(indicador);
-          promptAction();
-        });
-        break;
-      case 'completada':
-        rl.question('Indicador de la tarea completada: ', indicador => {
-          completeTask(indicador);
-          promptAction();
-        });
-        break;
-      case 'mostrar':
-        showTasks();
-        promptAction();
-        break;
-      case 'cerrar':
-        rl.close();
-        break;
-      default:
-        console.log('Acción no válida. Inténtalo de nuevo.');
-        promptAction();
-        break;
-    }
+
+async function promptAction() {
+  const action = await askQuestion('\nElige una acción (add/remove/complete/show/exit): ');
+  switch (action) {
+    case 'add':
+      const indicador = await askQuestion('Indicador de la tarea: ');
+      const descripcion = await askQuestion('Descripción de la tarea: ');
+      await addTask(indicador, descripcion);
+      promptAction();
+      break;
+    case 'remove':
+      const indicadorToRemove = await askQuestion('Indicador de la tarea a eliminar: ');
+      await removeTask(indicadorToRemove);
+      promptAction();
+      break;
+    case 'complete':
+      const indicadorToComplete = await askQuestion('Indicador de la tarea completada: ');
+      await completeTask(indicadorToComplete);
+      promptAction();
+      break;
+    case 'show':
+      showTasks();
+      promptAction();
+      break;
+    case 'exit':
+      rl.close();
+      break;
+    default:
+      console.log('Acción no válida. Inténtalo de nuevo.');
+      promptAction();
+      break;
+  }
+}
+
+function askQuestion(question) {
+  return new Promise((resolve, reject) => {
+    rl.question(question, answer => {
+      resolve(answer);
+    });
   });
 }
 
-console.log('Bienvenid@s a la lista de tareas!');
+console.log('Bienvenido a la lista de tareas!');
 promptAction();
+
